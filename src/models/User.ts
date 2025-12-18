@@ -7,17 +7,21 @@ interface UserAttributes {
   username: string;
   password: string;
   role: 'admin' | 'officer';
+  fullName?: string;
+  department?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
+interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'fullName' | 'department' | 'createdAt' | 'updatedAt'> {}
 
 class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   public id!: number;
   public username!: string;
   public password!: string;
   public role!: 'admin' | 'officer';
+  public fullName?: string;
+  public department?: string;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -47,6 +51,14 @@ User.init(
       type: DataTypes.ENUM('admin', 'officer'),
       allowNull: false,
       defaultValue: 'officer'
+    },
+    fullName: {
+      type: DataTypes.STRING(255),
+      allowNull: true
+    },
+    department: {
+      type: DataTypes.STRING(255),
+      allowNull: true
     }
   },
   {

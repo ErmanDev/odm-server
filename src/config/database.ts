@@ -3,13 +3,14 @@ import dotenv from 'dotenv';
 
 // Import all models to ensure they're registered
 import User from '../models/User';
-import Officer from '../models/Officer';
 import DutyAssignment from '../models/DutyAssignment';
 import DutySchedule from '../models/DutySchedule';
 import OngoingActivity from '../models/OngoingActivity';
 import PendingActivity from '../models/PendingActivity';
 import Notification from '../models/Notification';
 import Attendance from '../models/Attendance';
+import AbsenceRequest from '../models/AbsenceRequest';
+import ClockSettings from '../models/ClockSettings';
 
 dotenv.config();
 
@@ -62,13 +63,14 @@ export const connectDB = async (): Promise<void> => {
     console.log('✓ Database tables created/verified successfully.');
     console.log('✓ Tables available:');
     console.log('  - users');
-    console.log('  - officers');
     console.log('  - duty_assignments');
     console.log('  - duty_schedules');
     console.log('  - ongoing_activities');
     console.log('  - pending_activities');
     console.log('  - notifications');
     console.log('  - attendance');
+    console.log('  - absence_requests');
+    console.log('  - clock_settings');
   } catch (error) {
     console.error('✗ Unable to connect to the database:', error);
     process.exit(1);

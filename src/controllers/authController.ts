@@ -11,7 +11,7 @@ const generateToken = (id: number): string => {
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { username, password, role } = req.body;
+    const { username, password, role, fullName, department } = req.body;
 
     const userExists = await User.findOne({ where: { username } });
     if (userExists) {
@@ -19,7 +19,25 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const user = await User.create({ username, password, role: role || 'officer' });
+    // Validate required fields for officer registration
+    const userRole = role || 'officer';
+    if (userRole === 'officer') {
+      if (!fullName || !department) {
+        res.status(400).json({ 
+          success: false, 
+          message: 'FullName and department are required for officer registration' 
+        });
+        return;
+      }
+    }
+
+    const user = await User.create({ 
+      username, 
+      password, 
+      role: userRole,
+      fullName: userRole === 'officer' ? fullName : undefined,
+      department: userRole === 'officer' ? department : undefined
+    });
 
     res.status(201).json({
       success: true,
@@ -27,6 +45,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         id: user.id,
         username: user.username,
         role: user.role,
+        fullName: user.fullName,
+        department: user.department,
         token: generateToken(user.id)
       }
     });
@@ -62,6 +82,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         id: user.id,
         username: user.username,
         role: user.role,
+        fullName: user.fullName,
+        department: user.department,
         token: generateToken(user.id)
       }
     });

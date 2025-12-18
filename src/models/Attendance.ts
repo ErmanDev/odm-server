@@ -1,10 +1,10 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../config/database';
-import Officer from './Officer';
+import User from './User';
 
 interface AttendanceAttributes {
   id: number;
-  officerId: number;
+  userId: number;
   clockIn: Date;
   clockOut?: Date;
   date: Date;
@@ -17,7 +17,7 @@ interface AttendanceCreationAttributes extends Optional<AttendanceAttributes, 'i
 
 class Attendance extends Model<AttendanceAttributes, AttendanceCreationAttributes> implements AttendanceAttributes {
   public id!: number;
-  public officerId!: number;
+  public userId!: number;
   public clockIn!: Date;
   public clockOut?: Date;
   public date!: Date;
@@ -34,11 +34,11 @@ Attendance.init(
       autoIncrement: true,
       primaryKey: true
     },
-    officerId: {
+    userId: {
       type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
       references: {
-        model: 'officers',
+        model: 'users',
         key: 'id'
       }
     },
@@ -68,7 +68,8 @@ Attendance.init(
   }
 );
 
-Attendance.belongsTo(Officer, { foreignKey: 'officerId', as: 'officer' });
+Attendance.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+User.hasMany(Attendance, { foreignKey: 'userId', as: 'attendances' });
 
 export default Attendance;
 

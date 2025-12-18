@@ -1,6 +1,6 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../config/database';
-import Officer from './Officer';
+import User from './User';
 
 interface OngoingActivityAttributes {
   id: number;
@@ -9,12 +9,12 @@ interface OngoingActivityAttributes {
   location: string;
   status: 'in-progress' | 'completed' | 'on-hold';
   action: string;
-  officerId?: number;
+  userId?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-interface OngoingActivityCreationAttributes extends Optional<OngoingActivityAttributes, 'id' | 'officerId' | 'createdAt' | 'updatedAt'> {}
+interface OngoingActivityCreationAttributes extends Optional<OngoingActivityAttributes, 'id' | 'userId' | 'createdAt' | 'updatedAt'> {}
 
 class OngoingActivity extends Model<OngoingActivityAttributes, OngoingActivityCreationAttributes> implements OngoingActivityAttributes {
   public id!: number;
@@ -23,7 +23,7 @@ class OngoingActivity extends Model<OngoingActivityAttributes, OngoingActivityCr
   public location!: string;
   public status!: 'in-progress' | 'completed' | 'on-hold';
   public action!: string;
-  public officerId?: number;
+  public userId?: number;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -57,11 +57,11 @@ OngoingActivity.init(
       type: DataTypes.STRING(255),
       allowNull: false
     },
-    officerId: {
+    userId: {
       type: DataTypes.INTEGER.UNSIGNED,
       allowNull: true,
       references: {
-        model: 'officers',
+        model: 'users',
         key: 'id'
       }
     }
@@ -73,7 +73,7 @@ OngoingActivity.init(
   }
 );
 
-OngoingActivity.belongsTo(Officer, { foreignKey: 'officerId', as: 'officer' });
+OngoingActivity.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
 export default OngoingActivity;
 

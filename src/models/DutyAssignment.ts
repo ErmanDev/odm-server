@@ -1,6 +1,6 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../config/database';
-import Officer from './Officer';
+import User from './User';
 
 interface DutyAssignmentAttributes {
   id: number;
@@ -9,12 +9,12 @@ interface DutyAssignmentAttributes {
   department: string;
   taskLocation: string;
   status: 'pending' | 'ongoing' | 'completed' | 'cancelled';
-  officerId?: number;
+  userId?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-interface DutyAssignmentCreationAttributes extends Optional<DutyAssignmentAttributes, 'id' | 'officerId' | 'createdAt' | 'updatedAt'> {}
+interface DutyAssignmentCreationAttributes extends Optional<DutyAssignmentAttributes, 'id' | 'userId' | 'createdAt' | 'updatedAt'> {}
 
 class DutyAssignment extends Model<DutyAssignmentAttributes, DutyAssignmentCreationAttributes> implements DutyAssignmentAttributes {
   public id!: number;
@@ -23,7 +23,7 @@ class DutyAssignment extends Model<DutyAssignmentAttributes, DutyAssignmentCreat
   public department!: string;
   public taskLocation!: string;
   public status!: 'pending' | 'ongoing' | 'completed' | 'cancelled';
-  public officerId?: number;
+  public userId?: number;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -57,11 +57,11 @@ DutyAssignment.init(
       allowNull: false,
       defaultValue: 'pending'
     },
-    officerId: {
+    userId: {
       type: DataTypes.INTEGER.UNSIGNED,
       allowNull: true,
       references: {
-        model: 'officers',
+        model: 'users',
         key: 'id'
       }
     }
@@ -73,7 +73,7 @@ DutyAssignment.init(
   }
 );
 
-DutyAssignment.belongsTo(Officer, { foreignKey: 'officerId', as: 'officer' });
+DutyAssignment.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
 export default DutyAssignment;
 

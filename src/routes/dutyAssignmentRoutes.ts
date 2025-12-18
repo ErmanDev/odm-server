@@ -4,7 +4,8 @@ import {
   getDutyAssignment,
   createDutyAssignment,
   updateDutyAssignment,
-  deleteDutyAssignment
+  deleteDutyAssignment,
+  getMyDutyAssignments
 } from '../controllers/dutyAssignmentController';
 import { protect, authorize } from '../middleware/auth';
 
@@ -15,6 +16,8 @@ router.use(protect);
 router.route('/')
   .get(getDutyAssignments)
   .post(authorize('admin'), createDutyAssignment);
+
+router.get('/me', getMyDutyAssignments);
 
 router.route('/:id')
   .get(getDutyAssignment)

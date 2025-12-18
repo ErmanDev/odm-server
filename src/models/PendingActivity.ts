@@ -1,6 +1,6 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../config/database';
-import Officer from './Officer';
+import User from './User';
 
 interface PendingActivityAttributes {
   id: number;
@@ -8,12 +8,12 @@ interface PendingActivityAttributes {
   department: string;
   activity: string;
   status: 'pending' | 'approved' | 'rejected';
-  officerId?: number;
+  userId?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-interface PendingActivityCreationAttributes extends Optional<PendingActivityAttributes, 'id' | 'officerId' | 'createdAt' | 'updatedAt'> {}
+interface PendingActivityCreationAttributes extends Optional<PendingActivityAttributes, 'id' | 'userId' | 'createdAt' | 'updatedAt'> {}
 
 class PendingActivity extends Model<PendingActivityAttributes, PendingActivityCreationAttributes> implements PendingActivityAttributes {
   public id!: number;
@@ -21,7 +21,7 @@ class PendingActivity extends Model<PendingActivityAttributes, PendingActivityCr
   public department!: string;
   public activity!: string;
   public status!: 'pending' | 'approved' | 'rejected';
-  public officerId?: number;
+  public userId?: number;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -51,11 +51,11 @@ PendingActivity.init(
       allowNull: false,
       defaultValue: 'pending'
     },
-    officerId: {
+    userId: {
       type: DataTypes.INTEGER.UNSIGNED,
       allowNull: true,
       references: {
-        model: 'officers',
+        model: 'users',
         key: 'id'
       }
     }
@@ -67,7 +67,7 @@ PendingActivity.init(
   }
 );
 
-PendingActivity.belongsTo(Officer, { foreignKey: 'officerId', as: 'officer' });
+PendingActivity.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
 export default PendingActivity;
 
