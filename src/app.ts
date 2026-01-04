@@ -31,8 +31,21 @@ app.get('/health', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`API Base URL: ${API_CONFIG.BASE_URL}`);
+});
+
+server.on('error', (err: NodeJS.ErrnoException) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\n❌ Port ${PORT} is already in use.`);
+    console.log(`\nTo fix this, run one of these commands:`);
+    console.log(`  Windows: netstat -ano | findstr :${PORT}`);
+    console.log(`  Then kill the process: taskkill /PID <PID> /F`);
+    console.log(`\nOr change the port by setting PORT environment variable.`);
+    process.exit(1);
+  } else {
+    throw err;
+  }
 });
 

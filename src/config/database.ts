@@ -1,5 +1,6 @@
 import { Sequelize } from 'sequelize';
 import dotenv from 'dotenv';
+import path from 'path';
 
 // Import all models to ensure they're registered
 import User from '../models/User';
@@ -14,63 +15,33 @@ import ClockSettings from '../models/ClockSettings';
 
 dotenv.config();
 
-const sequelize = new Sequelize(
-  process.env.DB_NAME || 'officer_duty_db',
-  process.env.DB_USER || 'root',
-  process.env.DB_PASSWORD || '',
-  {
-    host: process.env.DB_HOST || '127.0.0.1',
-    port: parseInt(process.env.DB_PORT || '3306'),
-    dialect: 'mysql',
-    logging: process.env.NODE_ENV === 'development' ? console.log : false,
-    pool: {
-      max: 5,
-      min: 0,
-      acquire: 30000,
-      idle: 10000
-    }
+// SQLite database file path - stored locally in the project
+const dbPath = process.env.DB_PATH || path.join(__dirname, '../../data/officer_duty.db');
+
+const sequelize = new Sequelize({
+  dialect: 'sqlite',
+  storage: dbPath, 
+  logging: process.env.NODE_ENV === 'development' ? console.log : false,
+  pool: {
+    max: 5,
+    min: 0,
+    acquire: 30000,
+    idle: 10000
   }
-);
+});
 
 export const connectDB = async (): Promise<void> => {
   try {
-    const dbName = process.env.DB_NAME || 'officer_duty_db';
-    const dbUser = process.env.DB_USER || 'root';
-    const dbPassword = process.env.DB_PASSWORD || '';
-    const dbHost = process.env.DB_HOST || '127.0.0.1';
-    const dbPort = parseInt(process.env.DB_PORT || '3306');
-
-    // First, connect without database to create it if it doesn't exist
-    const tempSequelize = new Sequelize('', dbUser, dbPassword, {
-      host: dbHost,
-      port: dbPort,
-      dialect: 'mysql',
-      logging: false
-    });
-
-    await tempSequelize.authenticate();
-    await tempSequelize.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\`;`);
-    await tempSequelize.close();
-
-    // Now connect to the actual database
+    
     await sequelize.authenticate();
-    console.log('MySQL connection has been established successfully.');
+    console.log('SQLite database connection established successfully.');
+
     
     // Sync all models - creates tables if they don't exist
     // This will create all tables with their relationships
     await sequelize.sync({ force: false });
-    
-    console.log('✓ Database tables created/verified successfully.');
-    console.log('✓ Tables available:');
-    console.log('  - users');
-    console.log('  - duty_assignments');
-    console.log('  - duty_schedules');
-    console.log('  - ongoing_activities');
-    console.log('  - pending_activities');
-    console.log('  - notifications');
-    console.log('  - attendance');
-    console.log('  - absence_requests');
-    console.log('  - clock_settings');
+    console.log('Connected to the database successfully.');
+ 
   } catch (error) {
     console.error('✗ Unable to connect to the database:', error);
     process.exit(1);

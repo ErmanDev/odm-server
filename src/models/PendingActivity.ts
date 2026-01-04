@@ -30,7 +30,7 @@ class PendingActivity extends Model<PendingActivityAttributes, PendingActivityCr
 PendingActivity.init(
   {
     id: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true
     },
@@ -52,7 +52,7 @@ PendingActivity.init(
       defaultValue: 'pending'
     },
     userId: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       allowNull: true,
       references: {
         model: 'users',

@@ -1,7 +1,8 @@
 import { Response } from 'express';
+import { Op } from 'sequelize';
 import DutyAssignment from '../models/DutyAssignment';
 import User from '../models/User';
-import { AuthRequest } from '../middleware/auth';
+import { AuthRequest, getDepartmentFilter, canAccessDepartment } from '../middleware/auth';
 
 export const getDutyAssignments = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
@@ -10,6 +11,12 @@ export const getDutyAssignments = async (req: AuthRequest, res: Response): Promi
     
     if (userId) {
       whereClause.userId = userId;
+    }
+    
+    // Filter by department for supervisors
+    const departmentFilter = getDepartmentFilter(req.user);
+    if (departmentFilter) {
+      whereClause.department = departmentFilter;
     }
     
     const assignments = await DutyAssignment.findAll({
@@ -28,11 +35,18 @@ export const getDutyAssignment = async (req: AuthRequest, res: Response): Promis
     const assignment = await DutyAssignment.findByPk(req.params.id, {
       include: [{ association: 'user', attributes: ['id', 'username', 'fullName', 'department', 'role'] }]
     });
-    if (assignment) {
-      res.status(200).json({ success: true, data: assignment });
-    } else {
+    if (!assignment) {
       res.status(404).json({ success: false, message: 'Duty assignment not found' });
+      return;
     }
+    
+    // Check if supervisor can access this assignment's department
+    if (!canAccessDepartment(req.user, assignment.department)) {
+      res.status(403).json({ success: false, message: 'Access denied to this resource' });
+      return;
+    }
+    
+    res.status(200).json({ success: true, data: assignment });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -60,12 +74,23 @@ export const createDutyAssignment = async (req: AuthRequest, res: Response): Pro
       return;
     }
     
+    // Determine department
+    const assignmentDepartment = department || user.department || '';
+    
+    // If supervisor, ensure they can only assign to their department
+    if (req.user?.role === 'supervisor') {
+      if (!canAccessDepartment(req.user, assignmentDepartment)) {
+        res.status(403).json({ success: false, message: 'You can only assign officers from your department' });
+        return;
+      }
+    }
+    
     // Create assignment with auto-populated officerName
     const assignment = await DutyAssignment.create({
       userId,
       date,
       officerName: user.fullName || user.username,
-      department: department || user.department || '',
+      department: assignmentDepartment,
       taskLocation,
       status: status || 'pending'
     });
@@ -92,6 +117,12 @@ export const updateDutyAssignment = async (req: AuthRequest, res: Response): Pro
       return;
     }
     
+    // Check if supervisor can access this assignment's department
+    if (!canAccessDepartment(req.user, assignment.department)) {
+      res.status(403).json({ success: false, message: 'Access denied to this resource' });
+      return;
+    }
+    
     // If userId is being updated, validate and update officerName
     if (req.body.userId && req.body.userId !== assignment.userId) {
       const user = await User.findByPk(req.body.userId);
@@ -106,6 +137,15 @@ export const updateDutyAssignment = async (req: AuthRequest, res: Response): Pro
       req.body.officerName = user.fullName || user.username;
       if (!req.body.department && user.department) {
         req.body.department = user.department;
+      }
+      
+      // If supervisor, ensure they can only assign to their department
+      if (req.user?.role === 'supervisor') {
+        const newDepartment = req.body.department || user.department || '';
+        if (!canAccessDepartment(req.user, newDepartment)) {
+          res.status(403).json({ success: false, message: 'You can only assign officers from your department' });
+          return;
+        }
       }
     }
     
@@ -125,12 +165,19 @@ export const updateDutyAssignment = async (req: AuthRequest, res: Response): Pro
 export const deleteDutyAssignment = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const assignment = await DutyAssignment.findByPk(req.params.id);
-    if (assignment) {
-      await assignment.destroy();
-      res.status(200).json({ success: true, data: {} });
-    } else {
+    if (!assignment) {
       res.status(404).json({ success: false, message: 'Duty assignment not found' });
+      return;
     }
+    
+    // Check if supervisor can access this assignment's department
+    if (!canAccessDepartment(req.user, assignment.department)) {
+      res.status(403).json({ success: false, message: 'Access denied to this resource' });
+      return;
+    }
+    
+    await assignment.destroy();
+    res.status(200).json({ success: true, data: {} });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
   }

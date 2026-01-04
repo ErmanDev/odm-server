@@ -3,7 +3,7 @@ import { Op } from 'sequelize';
 import Attendance from '../models/Attendance';
 import User from '../models/User';
 import ClockSettings from '../models/ClockSettings';
-import { AuthRequest } from '../middleware/auth';
+import { AuthRequest, getDepartmentFilter } from '../middleware/auth';
 
 // Helper function to convert time string (HH:MM:SS or HH:MM) to minutes since midnight
 const timeToMinutes = (timeStr: string): number => {
@@ -276,15 +276,35 @@ export const getAllAttendance = async (req: AuthRequest, res: Response): Promise
       }
     }
 
+    // Filter by department for supervisors
+    const departmentFilter = getDepartmentFilter(req.user);
+    const includeOptions: any = [{
+      association: 'user',
+      attributes: ['id', 'username', 'fullName', 'department', 'role']
+    }];
+
+    if (departmentFilter) {
+      includeOptions[0].where = { department: departmentFilter };
+    }
+
     const attendanceRecords = await Attendance.findAll({
       where: whereClause,
-      include: [{ association: 'user', attributes: ['id', 'username', 'fullName', 'department', 'role'] }],
+      include: includeOptions,
       order: [['date', 'DESC'], ['clockIn', 'DESC']]
     });
 
+    // Filter results for supervisors (in case include filter didn't work as expected)
+    let filteredRecords = attendanceRecords;
+    if (departmentFilter) {
+      filteredRecords = attendanceRecords.filter(record => {
+        const user = (record as any).user;
+        return user && user.department === departmentFilter;
+      });
+    }
+
     res.status(200).json({
       success: true,
-      data: attendanceRecords
+      data: filteredRecords
     });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });

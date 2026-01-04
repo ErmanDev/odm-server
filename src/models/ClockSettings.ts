@@ -30,7 +30,7 @@ class ClockSettings extends Model<ClockSettingsAttributes, ClockSettingsCreation
 ClockSettings.init(
   {
     id: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true
     },
@@ -48,7 +48,7 @@ ClockSettings.init(
       defaultValue: true
     },
     createdBy: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       allowNull: true,
       references: {
         model: 'users',
@@ -56,7 +56,7 @@ ClockSettings.init(
       }
     },
     updatedBy: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       allowNull: true,
       references: {
         model: 'users',

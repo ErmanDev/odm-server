@@ -26,7 +26,7 @@ class DutySchedule extends Model<DutyScheduleAttributes, DutyScheduleCreationAtt
 DutySchedule.init(
   {
     id: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true
     },
@@ -39,7 +39,7 @@ DutySchedule.init(
       allowNull: false
     },
     userId: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       allowNull: true,
       references: {
         model: 'users',

@@ -19,7 +19,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Validate required fields for officer registration
+    // Validate required fields based on role
     const userRole = role || 'officer';
     if (userRole === 'officer') {
       if (!fullName || !department) {
@@ -29,14 +29,22 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         });
         return;
       }
+    } else if (userRole === 'supervisor') {
+      if (!department) {
+        res.status(400).json({ 
+          success: false, 
+          message: 'Department is required for supervisor registration' 
+        });
+        return;
+      }
     }
 
     const user = await User.create({ 
       username, 
       password, 
       role: userRole,
-      fullName: userRole === 'officer' ? fullName : undefined,
-      department: userRole === 'officer' ? department : undefined
+      fullName: (userRole === 'officer' || userRole === 'supervisor') ? fullName : undefined,
+      department: (userRole === 'officer' || userRole === 'supervisor') ? department : undefined
     });
 
     res.status(201).json({

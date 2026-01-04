@@ -15,14 +15,14 @@ router.use(protect);
 
 router.route('/')
   .get(getDutyAssignments)
-  .post(authorize('admin'), createDutyAssignment);
+  .post(authorize('admin', 'supervisor'), createDutyAssignment);
 
 router.get('/me', getMyDutyAssignments);
 
 router.route('/:id')
   .get(getDutyAssignment)
-  .put(authorize('admin'), updateDutyAssignment)
-  .delete(authorize('admin'), deleteDutyAssignment);
+  .put(authorize('admin', 'supervisor'), updateDutyAssignment)
+  .delete(authorize('admin', 'supervisor'), deleteDutyAssignment);
 
 export default router;
 

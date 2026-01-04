@@ -1,11 +1,27 @@
 import { Response } from 'express';
+import { Op } from 'sequelize';
 import User from '../models/User';
-import { AuthRequest } from '../middleware/auth';
+import { AuthRequest, getDepartmentFilter, canAccessDepartment } from '../middleware/auth';
 
 export const getOfficers = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    const whereClause: any = {};
+    
+    // For admins, show both officers and supervisors
+    // For supervisors, only show officers in their department
+    if (req.user?.role === 'admin') {
+      whereClause.role = { [Op.in]: ['officer', 'supervisor'] };
+    } else {
+      whereClause.role = 'officer';
+      // Filter by department for supervisors
+      const departmentFilter = getDepartmentFilter(req.user);
+      if (departmentFilter) {
+        whereClause.department = departmentFilter;
+      }
+    }
+    
     const officers = await User.findAll({
-      where: { role: 'officer' },
+      where: whereClause,
       attributes: ['id', 'username', 'role', 'fullName', 'department', 'createdAt', 'updatedAt']
     });
     res.status(200).json({ success: true, data: officers });
@@ -16,11 +32,19 @@ export const getOfficers = async (req: AuthRequest, res: Response): Promise<void
 
 export const getOfficer = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    const whereClause: any = { 
+      id: req.params.id,
+      role: 'officer'
+    };
+    
+    // Filter by department for supervisors
+    const departmentFilter = getDepartmentFilter(req.user);
+    if (departmentFilter) {
+      whereClause.department = departmentFilter;
+    }
+    
     const officer = await User.findOne({
-      where: { 
-        id: req.params.id,
-        role: 'officer'
-      },
+      where: whereClause,
       attributes: ['id', 'username', 'role', 'fullName', 'department', 'createdAt', 'updatedAt']
     });
     if (officer) {
@@ -40,6 +64,14 @@ export const createOfficer = async (req: AuthRequest, res: Response): Promise<vo
     if (!username || !password || !fullName || !department) {
       res.status(400).json({ success: false, message: 'Username, password, fullName, and department are required' });
       return;
+    }
+
+    // If supervisor, ensure they can only create officers in their department
+    if (req.user?.role === 'supervisor') {
+      if (!canAccessDepartment(req.user, department)) {
+        res.status(403).json({ success: false, message: 'You can only create officers in your department' });
+        return;
+      }
     }
 
     const userExists = await User.findOne({ where: { username } });
@@ -73,29 +105,48 @@ export const createOfficer = async (req: AuthRequest, res: Response): Promise<vo
 
 export const updateOfficer = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    const whereClause: any = { 
+      id: req.params.id,
+      role: 'officer'
+    };
+    
+    // Filter by department for supervisors
+    const departmentFilter = getDepartmentFilter(req.user);
+    if (departmentFilter) {
+      whereClause.department = departmentFilter;
+    }
+    
     const officer = await User.findOne({
-      where: { 
-        id: req.params.id,
-        role: 'officer'
+      where: whereClause
+    });
+    
+    if (!officer) {
+      res.status(404).json({ success: false, message: 'Officer not found' });
+      return;
+    }
+    
+    // Only allow updating fullName and department, not username, password, or role
+    const { fullName, department } = req.body;
+    
+    // If supervisor is updating department, ensure it's their own department
+    if (req.user?.role === 'supervisor' && department) {
+      if (!canAccessDepartment(req.user, department)) {
+        res.status(403).json({ success: false, message: 'You can only assign officers to your department' });
+        return;
+      }
+    }
+    
+    await officer.update({ fullName, department });
+    res.status(200).json({ 
+      success: true, 
+      data: {
+        id: officer.id,
+        username: officer.username,
+        role: officer.role,
+        fullName: officer.fullName,
+        department: officer.department
       }
     });
-    if (officer) {
-      // Only allow updating fullName and department, not username, password, or role
-      const { fullName, department } = req.body;
-      await officer.update({ fullName, department });
-      res.status(200).json({ 
-        success: true, 
-        data: {
-          id: officer.id,
-          username: officer.username,
-          role: officer.role,
-          fullName: officer.fullName,
-          department: officer.department
-        }
-      });
-    } else {
-      res.status(404).json({ success: false, message: 'Officer not found' });
-    }
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -103,18 +154,28 @@ export const updateOfficer = async (req: AuthRequest, res: Response): Promise<vo
 
 export const deleteOfficer = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const officer = await User.findOne({
-      where: { 
-        id: req.params.id,
-        role: 'officer'
-      }
-    });
-    if (officer) {
-      await officer.destroy();
-      res.status(200).json({ success: true, data: {} });
-    } else {
-      res.status(404).json({ success: false, message: 'Officer not found' });
+    const whereClause: any = { 
+      id: req.params.id,
+      role: 'officer'
+    };
+    
+    // Filter by department for supervisors
+    const departmentFilter = getDepartmentFilter(req.user);
+    if (departmentFilter) {
+      whereClause.department = departmentFilter;
     }
+    
+    const officer = await User.findOne({
+      where: whereClause
+    });
+    
+    if (!officer) {
+      res.status(404).json({ success: false, message: 'Officer not found' });
+      return;
+    }
+    
+    await officer.destroy();
+    res.status(200).json({ success: true, data: {} });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
   }

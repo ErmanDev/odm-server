@@ -54,3 +54,30 @@ export const authorize = (...roles: string[]) => {
   };
 };
 
+/**
+ * Helper function to get department filter for supervisors
+ * Returns the supervisor's department if user is a supervisor, null otherwise
+ */
+export const getDepartmentFilter = (user: User | undefined): string | null => {
+  if (!user) return null;
+  if (user.role === 'supervisor' && user.department) {
+    return user.department;
+  }
+  return null;
+};
+
+/**
+ * Helper function to check if supervisor can access a resource in a specific department
+ */
+export const canAccessDepartment = (user: User | undefined, department: string | null | undefined): boolean => {
+  if (!user) return false;
+  // Admins can access all departments
+  if (user.role === 'admin') return true;
+  // Supervisors can only access their own department
+  if (user.role === 'supervisor') {
+    return user.department === department;
+  }
+  // Officers can only access their own data (handled separately)
+  return false;
+};
+

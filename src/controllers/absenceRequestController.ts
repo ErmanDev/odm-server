@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { Op } from 'sequelize';
 import AbsenceRequest from '../models/AbsenceRequest';
 import User from '../models/User';
-import { AuthRequest } from '../middleware/auth';
+import { AuthRequest, getDepartmentFilter, canAccessDepartment } from '../middleware/auth';
 
 export const createAbsenceRequest = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
@@ -98,15 +98,35 @@ export const getAllAbsenceRequests = async (req: AuthRequest, res: Response): Pr
       whereClause.status = status;
     }
 
+    // Filter by department for supervisors
+    const departmentFilter = getDepartmentFilter(req.user);
+    const includeOptions: any = [{
+      association: 'user',
+      attributes: ['id', 'username', 'fullName', 'department', 'role']
+    }];
+
+    if (departmentFilter) {
+      includeOptions[0].where = { department: departmentFilter };
+    }
+
     const absenceRequests = await AbsenceRequest.findAll({
       where: whereClause,
-      include: [{ association: 'user', attributes: ['id', 'username', 'fullName', 'department', 'role'] }],
+      include: includeOptions,
       order: [['createdAt', 'DESC']]
     });
 
+    // Filter results for supervisors (in case include filter didn't work as expected)
+    let filteredRequests = absenceRequests;
+    if (departmentFilter) {
+      filteredRequests = absenceRequests.filter(req => {
+        const user = (req as any).user;
+        return user && user.department === departmentFilter;
+      });
+    }
+
     res.status(200).json({
       success: true,
-      data: absenceRequests
+      data: filteredRequests
     });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
@@ -128,9 +148,19 @@ export const updateAbsenceRequestStatus = async (req: AuthRequest, res: Response
       return;
     }
 
-    const absenceRequest = await AbsenceRequest.findByPk(id);
+    const absenceRequest = await AbsenceRequest.findByPk(id, {
+      include: [{ association: 'user', attributes: ['id', 'username', 'fullName', 'department', 'role'] }]
+    });
+    
     if (!absenceRequest) {
       res.status(404).json({ success: false, message: 'Absence request not found' });
+      return;
+    }
+
+    // Check if supervisor can access this request's department
+    const user = (absenceRequest as any).user;
+    if (user && !canAccessDepartment(req.user, user.department)) {
+      res.status(403).json({ success: false, message: 'Access denied to this resource' });
       return;
     }
 

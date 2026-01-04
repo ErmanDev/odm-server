@@ -32,7 +32,7 @@ class OngoingActivity extends Model<OngoingActivityAttributes, OngoingActivityCr
 OngoingActivity.init(
   {
     id: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true
     },
@@ -58,7 +58,7 @@ OngoingActivity.init(
       allowNull: false
     },
     userId: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       allowNull: true,
       references: {
         model: 'users',

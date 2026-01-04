@@ -14,12 +14,12 @@ router.use(protect);
 
 router.route('/')
   .get(getOfficers)
-  .post(authorize('admin'), createOfficer);
+  .post(authorize('admin', 'supervisor'), createOfficer);
 
 router.route('/:id')
   .get(getOfficer)
-  .put(authorize('admin'), updateOfficer)
-  .delete(authorize('admin'), deleteOfficer);
+  .put(authorize('admin', 'supervisor'), updateOfficer)
+  .delete(authorize('admin', 'supervisor'), deleteOfficer);
 
 export default router;
 

@@ -17,8 +17,8 @@ router.post('/checkin', authorize('officer'), checkIn);
 router.post('/checkout', authorize('officer'), checkOut);
 router.get('/me', authorize('officer'), getMyAttendance);
 
-// Admin routes
-router.get('/', authorize('admin'), getAllAttendance);
+// Admin and Supervisor routes
+router.get('/', authorize('admin', 'supervisor'), getAllAttendance);
 
 export default router;
 

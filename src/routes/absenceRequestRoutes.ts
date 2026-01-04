@@ -16,9 +16,9 @@ router.use(protect);
 router.post('/', authorize('officer'), createAbsenceRequest);
 router.get('/me', authorize('officer'), getMyAbsenceRequests);
 
-// Admin routes
-router.get('/', authorize('admin'), getAllAbsenceRequests);
-router.put('/:id/status', authorize('admin'), updateAbsenceRequestStatus);
+// Admin and Supervisor routes
+router.get('/', authorize('admin', 'supervisor'), getAllAbsenceRequests);
+router.put('/:id/status', authorize('admin', 'supervisor'), updateAbsenceRequestStatus);
 
 export default router;
 

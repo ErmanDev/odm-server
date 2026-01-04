@@ -1,10 +1,10 @@
 # Officer Duty Management Server
 
-Backend server for the Officer Duty Management System using MySQL and Laragon.
+Backend server for the Officer Duty Management System using SQLite (file-based database).
 
 ## Features
 
-- MySQL database with Sequelize ORM
+- **SQLite database** - File-based, no server needed! Works completely offline
 - User authentication (JWT)
 - Officer management
 - Duty assignments
@@ -17,8 +17,7 @@ Backend server for the Officer Duty Management System using MySQL and Laragon.
 ## Prerequisites
 
 - Node.js (v16 or higher)
-- Laragon with MySQL running
-- MySQL database created (or it will be created automatically)
+- **No database server required!** SQLite is file-based and works offline
 
 ## Setup
 
@@ -27,26 +26,23 @@ Backend server for the Officer Duty Management System using MySQL and Laragon.
 npm install
 ```
 
-2. Create a `.env` file based on `.env.example`:
+2. Create a `.env` file (copy from `.env.example` if available):
 ```bash
-cp .env.example .env
+# Create .env file with these settings:
+PORT=3000
+NODE_ENV=development
+DB_PATH=./data/officer_duty.db
+JWT_SECRET=your-secret-key-here
+JWT_EXPIRE=7d
+API_BASE_URL=http://127.0.0.1:3000/api
 ```
 
-3. Update the `.env` file with your Laragon MySQL connection details:
-   - `DB_HOST`: Your Laragon MySQL IP (usually `127.0.0.1`)
-   - `DB_PORT`: MySQL port (usually `3306`)
-   - `DB_NAME`: Database name (will be created if it doesn't exist)
-   - `DB_USER`: MySQL username (usually `root`)
-   - `DB_PASSWORD`: MySQL password (empty by default in Laragon)
-
-4. Make sure Laragon MySQL is running.
-
-5. Run the development server:
+3. Run the development server:
 ```bash
 npm run dev
 ```
 
-The server will automatically create the database tables on first run.
+The server will automatically create the database file and tables on first run in the `data/` directory.
 
 ## API Configuration
 
@@ -76,28 +72,35 @@ All API endpoints are configured in `src/config/api.ts`. You can access the API 
 ## Environment Variables
 
 - `PORT` - Server port (default: 3000)
-- `DB_HOST` - MySQL host IP (default: 127.0.0.1)
-- `DB_PORT` - MySQL port (default: 3306)
-- `DB_NAME` - Database name
-- `DB_USER` - MySQL username
-- `DB_PASSWORD` - MySQL password
+- `DB_PATH` - SQLite database file path (default: `./data/officer_duty.db`)
 - `JWT_SECRET` - Secret key for JWT tokens
 - `JWT_EXPIRE` - JWT token expiration time
 - `API_BASE_URL` - Base URL for API endpoints
 - `NODE_ENV` - Environment (development/production)
+
+## Offline Operation
+
+✅ **This server runs completely offline!**
+- No database server needed (SQLite is file-based)
+- No internet connection required
+- All data is stored in `data/officer_duty.db`
+- Just run `npm run dev` and it works!
 
 ## Database Tables
 
 The following tables will be automatically created when you run `npm run dev`:
 
 - `users` - User accounts with authentication
-- `officers` - Officer information
 - `duty_assignments` - Duty assignment records
 - `duty_schedules` - Duty schedule records
 - `ongoing_activities` - Ongoing activity records
 - `pending_activities` - Pending activity records
 - `notifications` - Notification records
 - `attendance` - Attendance tracking records
+- `absence_requests` - Absence request records
+- `clock_settings` - Clock settings records
+
+**Note:** The database file is stored at `data/officer_duty.db`. You can backup or move this file to transfer data.
 
 ## Project Structure
 

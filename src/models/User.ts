@@ -6,7 +6,7 @@ interface UserAttributes {
   id: number;
   username: string;
   password: string;
-  role: 'admin' | 'officer';
+  role: 'admin' | 'supervisor' | 'officer';
   fullName?: string;
   department?: string;
   createdAt?: Date;
@@ -19,7 +19,7 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   public id!: number;
   public username!: string;
   public password!: string;
-  public role!: 'admin' | 'officer';
+  public role!: 'admin' | 'supervisor' | 'officer';
   public fullName?: string;
   public department?: string;
 
@@ -34,7 +34,7 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
 User.init(
   {
     id: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true
     },
@@ -48,7 +48,7 @@ User.init(
       allowNull: false
     },
     role: {
-      type: DataTypes.ENUM('admin', 'officer'),
+      type: DataTypes.ENUM('admin', 'supervisor', 'officer'),
       allowNull: false,
       defaultValue: 'officer'
     },
@@ -58,7 +58,14 @@ User.init(
     },
     department: {
       type: DataTypes.STRING(255),
-      allowNull: true
+      allowNull: true,
+      validate: {
+        isRequiredForSupervisor(value: string | undefined) {
+          if (this.role === 'supervisor' && !value) {
+            throw new Error('Department is required for supervisors');
+          }
+        }
+      }
     }
   },
   {
@@ -70,10 +77,18 @@ User.init(
         if (user.password) {
           user.password = await bcrypt.hash(user.password, 10);
         }
+        // Validate supervisor must have department
+        if (user.role === 'supervisor' && !user.department) {
+          throw new Error('Department is required for supervisors');
+        }
       },
       beforeUpdate: async (user: User) => {
         if (user.changed('password')) {
           user.password = await bcrypt.hash(user.password, 10);
+        }
+        // Validate supervisor must have department
+        if (user.role === 'supervisor' && !user.department) {
+          throw new Error('Department is required for supervisors');
         }
       }
     }

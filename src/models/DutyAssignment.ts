@@ -32,7 +32,7 @@ class DutyAssignment extends Model<DutyAssignmentAttributes, DutyAssignmentCreat
 DutyAssignment.init(
   {
     id: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true
     },
@@ -58,7 +58,7 @@ DutyAssignment.init(
       defaultValue: 'pending'
     },
     userId: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       allowNull: true,
       references: {
         model: 'users',

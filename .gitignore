@@ -33,3 +33,10 @@ yarn-error.log*
 # TypeScript
 *.tsbuildinfo
 
+# SQLite database files
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+data/
+
