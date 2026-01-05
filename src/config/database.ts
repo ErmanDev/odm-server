@@ -1,6 +1,5 @@
 import { Sequelize } from 'sequelize';
 import dotenv from 'dotenv';
-import path from 'path';
 
 // Import all models to ensure they're registered
 import User from '../models/User';
@@ -15,12 +14,24 @@ import ClockSettings from '../models/ClockSettings';
 
 dotenv.config();
 
-// SQLite database file path - stored locally in the project
-const dbPath = process.env.DB_PATH || path.join(__dirname, '../../data/officer_duty.db');
+// Get database URL from environment variable (required for PostgreSQL)
+const databaseUrl = process.env.DATABASE_URL;
 
-const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: dbPath, 
+if (!databaseUrl) {
+  console.error('✗ DATABASE_URL environment variable is required');
+  console.error('Please set DATABASE_URL to your PostgreSQL connection string');
+  process.exit(1);
+}
+
+// Configure Sequelize for PostgreSQL
+const sequelize = new Sequelize(databaseUrl, {
+  dialect: 'postgres',
+  dialectOptions: {
+    ssl: process.env.NODE_ENV === 'production' ? {
+      require: true,
+      rejectUnauthorized: false
+    } : false
+  },
   logging: process.env.NODE_ENV === 'development' ? console.log : false,
   pool: {
     max: 5,
@@ -32,15 +43,13 @@ const sequelize = new Sequelize({
 
 export const connectDB = async (): Promise<void> => {
   try {
-    
     await sequelize.authenticate();
-    console.log('SQLite database connection established successfully.');
+    console.log('PostgreSQL database connection established successfully.');
 
-    
     // Sync all models - creates tables if they don't exist
     // This will create all tables with their relationships
     await sequelize.sync({ force: false });
-    console.log('Connected to the database successfully.');
+    console.log('Database synced successfully.');
  
   } catch (error) {
     console.error('✗ Unable to connect to the database:', error);

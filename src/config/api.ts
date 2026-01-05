@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const API_CONFIG = {
-  BASE_URL: process.env.API_BASE_URL || 'http://127.0.0.1:3000/api',
+  BASE_URL: process.env.API_BASE_URL || 'https://odm-server-jsqt.onrender.com/api',
   VERSION: 'v1',
   ENDPOINTS: {
     // Authentication
