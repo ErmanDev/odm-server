@@ -59,18 +59,37 @@ export const getOfficer = async (req: AuthRequest, res: Response): Promise<void>
 
 export const createOfficer = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { username, password, fullName, department } = req.body;
+    const { username, password, fullName, department, role } = req.body;
     
     if (!username || !password || !fullName || !department) {
       res.status(400).json({ success: false, message: 'Username, password, fullName, and department are required' });
       return;
     }
 
-    // If supervisor, ensure they can only create officers in their department
+    // If supervisor, ensure they can only create officers (not supervisors)
     if (req.user?.role === 'supervisor') {
+      if (role && role.toLowerCase() !== 'officer') {
+        res.status(403).json({ success: false, message: 'Supervisors can only create officers' });
+        return;
+      }
       if (!canAccessDepartment(req.user, department)) {
         res.status(403).json({ success: false, message: 'You can only create officers in your department' });
         return;
+      }
+    }
+
+    // Determine the role to assign
+    let userRole: 'admin' | 'supervisor' | 'officer' = 'officer'; // Default to officer
+    if (role) {
+      const requestedRole = role.toLowerCase();
+      // Only admins can create supervisors
+      if (requestedRole === 'supervisor' && req.user?.role !== 'admin') {
+        res.status(403).json({ success: false, message: 'Only admins can create supervisors' });
+        return;
+      }
+      // Supervisors can only create officers (already checked above)
+      if (requestedRole === 'supervisor' || requestedRole === 'officer') {
+        userRole = requestedRole as 'supervisor' | 'officer';
       }
     }
 
@@ -83,7 +102,7 @@ export const createOfficer = async (req: AuthRequest, res: Response): Promise<vo
     const officer = await User.create({
       username,
       password,
-      role: 'officer',
+      role: userRole,
       fullName,
       department
     });
