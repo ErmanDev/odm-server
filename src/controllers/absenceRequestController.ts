@@ -100,33 +100,45 @@ export const getAllAbsenceRequests = async (req: AuthRequest, res: Response): Pr
 
     // Filter by department for supervisors
     const departmentFilter = getDepartmentFilter(req.user);
-    const includeOptions: any = [{
-      association: 'user',
-      attributes: ['id', 'username', 'fullName', 'department', 'role']
-    }];
-
+    
+    // If supervisor, get all officers in their department first
     if (departmentFilter) {
-      includeOptions[0].where = { department: departmentFilter };
+      const departmentOfficers = await User.findAll({
+        where: {
+          role: 'officer',
+          department: departmentFilter
+        },
+        attributes: ['id']
+      });
+      const officerIds = departmentOfficers.map(o => o.id);
+      
+      // If no officers in department, return empty array
+      if (officerIds.length === 0) {
+        res.status(200).json({
+          success: true,
+          data: []
+        });
+        return;
+      }
+      
+      // Filter absence requests by officer IDs
+      whereClause.userId = {
+        [Op.in]: officerIds
+      };
     }
 
     const absenceRequests = await AbsenceRequest.findAll({
       where: whereClause,
-      include: includeOptions,
+      include: [{
+        association: 'user',
+        attributes: ['id', 'username', 'fullName', 'department', 'role']
+      }],
       order: [['createdAt', 'DESC']]
     });
 
-    // Filter results for supervisors (in case include filter didn't work as expected)
-    let filteredRequests = absenceRequests;
-    if (departmentFilter) {
-      filteredRequests = absenceRequests.filter(req => {
-        const user = (req as any).user;
-        return user && user.department === departmentFilter;
-      });
-    }
-
     res.status(200).json({
       success: true,
-      data: filteredRequests
+      data: absenceRequests
     });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
