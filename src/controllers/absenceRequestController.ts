@@ -90,12 +90,15 @@ export const getAllAbsenceRequests = async (req: AuthRequest, res: Response): Pr
       return;
     }
 
+    // Log for debugging
+    console.log(`[getAllAbsenceRequests] User: ${req.user.username}, Role: ${req.user.role}, Department: ${req.user.department}`);
+
     // Get query parameters for filtering
     const { status } = req.query;
     const whereClause: any = {};
 
-    if (status) {
-      whereClause.status = status;
+    if (status && typeof status === 'string' && status.trim() !== '') {
+      whereClause.status = status.toLowerCase();
     }
 
     // Filter by department for supervisors
@@ -103,6 +106,7 @@ export const getAllAbsenceRequests = async (req: AuthRequest, res: Response): Pr
     
     // If supervisor, get all officers in their department first
     if (departmentFilter) {
+      console.log(`[getAllAbsenceRequests] Supervisor filtering by department: ${departmentFilter}`);
       const departmentOfficers = await User.findAll({
         where: {
           role: 'officer',
@@ -112,8 +116,11 @@ export const getAllAbsenceRequests = async (req: AuthRequest, res: Response): Pr
       });
       const officerIds = departmentOfficers.map(o => o.id);
       
+      console.log(`[getAllAbsenceRequests] Found ${officerIds.length} officers in department`);
+      
       // If no officers in department, return empty array
       if (officerIds.length === 0) {
+        console.log(`[getAllAbsenceRequests] No officers in department, returning empty array`);
         res.status(200).json({
           success: true,
           data: []
@@ -125,6 +132,8 @@ export const getAllAbsenceRequests = async (req: AuthRequest, res: Response): Pr
       whereClause.userId = {
         [Op.in]: officerIds
       };
+    } else {
+      console.log(`[getAllAbsenceRequests] Admin user - fetching all absence requests`);
     }
 
     const absenceRequests = await AbsenceRequest.findAll({
@@ -136,11 +145,14 @@ export const getAllAbsenceRequests = async (req: AuthRequest, res: Response): Pr
       order: [['createdAt', 'DESC']]
     });
 
+    console.log(`[getAllAbsenceRequests] Found ${absenceRequests.length} absence requests`);
+
     res.status(200).json({
       success: true,
       data: absenceRequests
     });
   } catch (error: any) {
+    console.error(`[getAllAbsenceRequests] Error:`, error);
     res.status(500).json({ success: false, message: error.message });
   }
 };

@@ -45,8 +45,17 @@ export const authorize = (...roles: string[]) => {
       return;
     }
 
-    if (!roles.includes(req.user.role)) {
-      res.status(403).json({ success: false, message: 'User role is not authorized' });
+    // Make role comparison case-insensitive
+    const userRole = req.user.role?.toLowerCase();
+    const allowedRoles = roles.map(r => r.toLowerCase());
+    
+    console.log(`[authorize] User: ${req.user.username}, Role: ${req.user.role}, Allowed roles: ${roles.join(', ')}, Match: ${allowedRoles.includes(userRole)}`);
+
+    if (!userRole || !allowedRoles.includes(userRole)) {
+      res.status(403).json({ 
+        success: false, 
+        message: `User role '${req.user.role}' is not authorized. Allowed roles: ${roles.join(', ')}` 
+      });
       return;
     }
 

@@ -68,8 +68,11 @@ export const getSupervisorDashboardStats = async (req: AuthRequest, res: Respons
       return;
     }
 
+    console.log(`[getSupervisorDashboardStats] User: ${req.user.username}, Role: ${req.user.role}, Department: ${req.user.department}`);
+
     const departmentFilter = getDepartmentFilter(req.user);
     if (!departmentFilter) {
+      console.log(`[getSupervisorDashboardStats] Supervisor has no department assigned`);
       res.status(403).json({ success: false, message: 'Supervisor must have a department assigned' });
       return;
     }
@@ -90,6 +93,24 @@ export const getSupervisorDashboardStats = async (req: AuthRequest, res: Respons
       attributes: ['id']
     });
     const officerIds = departmentOfficers.map(o => o.id);
+
+    console.log(`[getSupervisorDashboardStats] Found ${officerIds.length} officers in department ${departmentFilter}`);
+
+    // If no officers in department, return zero counts
+    if (officerIds.length === 0) {
+      console.log(`[getSupervisorDashboardStats] No officers in department, returning zero counts`);
+      res.status(200).json({
+        success: true,
+        data: {
+          lateCheckInCount: 0,
+          presentTodayCount: 0,
+          absenceRequestCount: 0,
+          activeDutyAssignmentsCount: 0,
+          totalOfficersCount: 0
+        }
+      });
+      return;
+    }
 
     // Count officers who checked in today (in supervisor's department)
     const presentTodayCount = await Attendance.count({
@@ -141,6 +162,8 @@ export const getSupervisorDashboardStats = async (req: AuthRequest, res: Respons
     // Count total officers in supervisor's department
     const totalOfficersCount = officerIds.length;
 
+    console.log(`[getSupervisorDashboardStats] Stats - Present: ${presentTodayCount}, Late: ${lateCheckInCount}, Absence: ${absenceRequestCount}, Duty: ${activeDutyAssignmentsCount}, Total: ${totalOfficersCount}`);
+
     res.status(200).json({
       success: true,
       data: {
@@ -152,6 +175,7 @@ export const getSupervisorDashboardStats = async (req: AuthRequest, res: Respons
       }
     });
   } catch (error: any) {
+    console.error(`[getSupervisorDashboardStats] Error:`, error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
