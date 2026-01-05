@@ -24,10 +24,12 @@ if (!databaseUrl) {
 }
 
 // Configure Sequelize for PostgreSQL
+// For local development, use External Database URL (not Internal)
+// Internal URLs only work within Render's network
 const sequelize = new Sequelize(databaseUrl, {
   dialect: 'postgres',
   dialectOptions: {
-    ssl: process.env.NODE_ENV === 'production' ? {
+    ssl: process.env.DATABASE_SSL === 'true' || process.env.NODE_ENV === 'production' ? {
       require: true,
       rejectUnauthorized: false
     } : false
